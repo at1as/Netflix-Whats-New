@@ -11,10 +11,10 @@ original_series = {
   "Comedy"            => '//*[@id="mw-content-text"]/div/table[3]/tr',
   "Miniseries"        => '//*[@id="mw-content-text"]/div/table[4]/tr',
   "Adult animation"   => '//*[@id="mw-content-text"]/div/table[5]/tr',
-  #"Kids/Teens/Family" => {
-  #                          "Animated"    => '//*[@id="mw-content-text"]/div/table[6]/tr',
-  #                          "Live-Action" => '//*[@id="mw-content-text"]/div/table[7]/tr',
-  #},
+  "Kids/Teens/Family" => {
+                            "Animated"    => '//*[@id="mw-content-text"]/div/table[6]/tr',
+                            "Live-Action" => '//*[@id="mw-content-text"]/div/table[7]/tr',
+  },
   "Foreign language"  => '//*[@id="mw-content-text"]/div/table[8]/tr',
   "Co-productions"    => '//*[@id="mw-content-text"]/div/table[9]/tr',
   "Continuations"     => '//*[@id="mw-content-text"]/div/table[10]/tr',
@@ -33,8 +33,22 @@ original_films = {
 
 
 
+def flatten_hash(genre_xpath_hash)
+  x = genre_xpath_hash.map do |k, v|
+    (v.is_a?(String) \
+      ? [k, v] \
+      : v.map { |inner_k, inner_v| ["#{k} #{inner_k}", inner_v] }
+    )
+  end.flatten.each_slice(2).to_h
+end
+
 def get_columns(table_header)
   table_header.first.text.split("\n")
+end
+
+def get_past_shows(table_rows)
+  past = table_rows.take_while { |x| x.text.strip.downcase != "upcoming" }
+  past.map { |show| show.text.split("\n") }
 end
 
 def get_new_shows(table_rows)
@@ -69,9 +83,20 @@ def fix_datestamp(show_details_hash)
   end
 end
 
+def fix_season_list(show_details_hash)
+  # "010 !1 season, 10 episodes"  =>  "1 season, 10 episodes"
+  show_details_hash.inject({}) do |hash, (k, v)|
+    hash.merge(
+      { k => v.split(/^[0-9]* !/).last }
+    )
+  end
+end
+
 def sanatize_data(show_details_hash)
   removed_references = sanatize_references(show_details_hash)
-  fix_datestamp(removed_references)
+  fixed_seasons      = fix_season_list(removed_references)
+
+  fix_datestamp(fixed_seasons)
 end
 
 def print_row(show_details_hash)
@@ -89,7 +114,7 @@ site     = Net::HTTP.get(URI(netflix_content_uri))
 xml_site = Nokogiri::XML(site)
 
 
-original_series.each_pair do |genre, xpath|
+flatten_hash(original_series).each_pair do |genre, xpath|
   table = xml_site.xpath(xpath)
   
   puts "\n### Upcoming #{genre} Series ###\n"
@@ -98,10 +123,11 @@ original_series.each_pair do |genre, xpath|
   print_row(sanatize_data(new_shows))
 end
 
-original_films.each_pair do |genre, xpath|
+
+flatten_hash(original_films).each_pair do |genre, xpath|
   table = xml_site.xpath(xpath)
 
-  puts "\n### Upcoming #{genre} Series ###\n"
+  puts "\n### Upcoming #{genre} Movies ###\n"
   new_movies = get_new_show_details(table)
   
   print_row(sanatize_data(new_movies))
