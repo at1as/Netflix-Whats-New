@@ -4,7 +4,7 @@ require 'net/http'
 require 'nokogiri'
 require_relative './wikipedia_xpath'
 
-netflix_content_uri = "https://en.wikipedia.org/wiki/List_of_original_programs_distributed_by_Netflix"
+NETFLIX_CONTENT_URI = "https://en.wikipedia.org/wiki/List_of_original_programs_distributed_by_Netflix"
 
 
 def flatten_hash(genre_xpath_hash)
@@ -17,13 +17,13 @@ def flatten_hash(genre_xpath_hash)
   end.flatten.each_slice(2).to_h
 end
 
-def get_column_names(table_header)
-  # <xml table row>  ==>  ["Title", "Genre", "Premiere", "Seasons", "Length", "Status"]
-  table_header.first.children.map { |x| x.text }.reject { |x| x == "\n" }
+def get_column_names(table_rows)
+  # <xml table rows>  ==>  ["Title", "Genre", "Premiere", "Seasons", "Length", "Status"]
+  table_rows.first.children.map { |x| x.text }.reject { |x| x == "\n" }
 end
 
-def get_new_shows(table_rows)
-  # <xml table row>  ==>  [["Mindhunter", "Drama", "October 13, 2017", "1 Season, 10 episodes", "50-80 mins", "Renewed"], [...]]
+def get_formatted_shows(table_rows)
+  # <xml table rows>  ==>  [["Mindhunter", "Drama", "October 13, 2017", "1 Season, 10 episodes", "50-80 mins", "Renewed"], [...]]
   upcoming = table_rows.drop_while { |x| x.text.strip.downcase != "upcoming" }.drop(1)
 
   upcoming.map do |show_row|
@@ -34,7 +34,7 @@ end
 def get_new_show_details(xml_table)
   # <xml table>  ==>  [{"Title": "Mindhunter", "Genre": "Drama", "Premiere": "October 13, 2017", ...} , {...}]
   fields = get_column_names(xml_table)
-  shows  = get_new_shows(xml_table)
+  shows  = get_formatted_shows(xml_table)
   
   shows.map { |show| fields.zip(show) }.first.to_h.reject { |x, y| x.empty? }
 end
@@ -78,33 +78,46 @@ def sanatize_data(show_details_hash)
   fix_datestamp(fixed_seasons)
 end
 
+def pretty_print_hash(hash)
+  max_key_length = hash.keys.sort.last.length
+  padding        = " " * max_key_length
+
+  hash.each do |k, v|
+    key = "#{k}#{padding}"[0..max_key_length]
+
+    puts "\t\t#{key} : #{v}"
+  end
+end
+
 def print_row(show_details_hash)
   if show_details_hash != {}
     puts "#{show_details_hash["Premiere"]} :\n\n"
     
     puts "\t- #{show_details_hash["Title"]}\n"
     
-    show_details_hash.reject {|x| ["title", "premiere"].include? x.downcase}.each do |k, v|
-      puts "\t\t#{k}: #{v}"
-    end
+    fields = show_details_hash.reject {|x| ["title", "premiere"].include? x.downcase}
+    pretty_print_hash(fields)
   else
     puts "None"
   end
 end
 
-def print_heading(genre, media_type, character_width=50)
+def print_heading(genre, media_type, character_width=60)
   # => ##### Upcoming Drama Series #####
   title   = "Upcoming #{genre.split.map(&:capitalize).join(" ")} #{media_type.capitalize}"
+  title   = title.split.uniq.join(" ")
+
   padding = "#" * (character_width - title.length / 2 - 1)
+  heading = "#{padding} #{title} #{padding}"
 
   puts
-  puts "#{padding} #{title} #{padding}"
+  puts (heading.length % 2 == 0 ? "#{heading}#" : heading )
   puts
 end
 
 target_date = DateTime.parse(ARGV.first) rescue DateTime.now
 
-site     = Net::HTTP.get(URI(netflix_content_uri))
+site     = Net::HTTP.get(URI(NETFLIX_CONTENT_URI))
 xml_site = Nokogiri::XML(site)
 
 
