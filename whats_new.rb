@@ -18,12 +18,14 @@ def flatten_hash(genre_xpath_hash)
 end
 
 def get_column_names(table_rows)
-  # <xml table rows>  ==>  ["Title", "Genre", "Premiere", "Seasons", "Length", "Status"]
+  # <xml table rows>  ==> 
+  #       ["Title", "Genre", "Premiere", "Seasons", "Length", "Status"]
   table_rows.first.children.map { |x| x.text }.reject { |x| x == "\n" }
 end
 
 def get_formatted_shows(table_rows)
-  # <xml table rows>  ==>  [["Mindhunter", "Drama", "October 13, 2017", "1 Season, 10 episodes", "50-80 mins", "Renewed"], [...]]
+  # <xml table rows>  ==>
+  #       [["Mindhunter", "Drama", "October 13, 2017", "1 Season, 10 episodes", "50-80 mins", "Renewed"], [...]]
   upcoming = table_rows.drop_while { |x| x.text.strip.downcase != "upcoming" }.drop(1)
 
   upcoming.map do |show_row|
@@ -32,11 +34,12 @@ def get_formatted_shows(table_rows)
 end
 
 def get_new_show_details(xml_table)
-  # <xml table>  ==>  [{"Title": "Mindhunter", "Genre": "Drama", "Premiere": "October 13, 2017", ...} , {...}]
+  # <xml table>  ==>  
+  #       [{"Title": "Mindhunter", "Genre": "Drama", "Premiere": "October 13, 2017", ...} , {...}]
   fields = get_column_names(xml_table)
   shows  = get_formatted_shows(xml_table)
-  
-  shows.map { |show| fields.zip(show) }.first.to_h.reject { |x, y| x.empty? }
+ 
+  shows.map { |show| fields.zip(show) }.map { |x| x.to_h }
 end
 
 def sanatize_references(show_details_hash)
@@ -90,20 +93,17 @@ def pretty_print_hash(hash)
 end
 
 def print_row(show_details_hash)
-  if show_details_hash != {}
-    puts "#{show_details_hash["Premiere"]} :\n\n"
+  return if show_details_hash == {}
     
-    puts "\t- #{show_details_hash["Title"]}\n"
-    
-    fields = show_details_hash.reject {|x| ["title", "premiere"].include? x.downcase}
-    pretty_print_hash(fields)
-  else
-    puts "None"
-  end
+  puts "\n#{show_details_hash["Premiere"]} :\n\n"
+  puts "\t- #{show_details_hash["Title"]}\n"
+  
+  fields = show_details_hash.reject {|x| ["title", "premiere"].include? x.downcase}
+  pretty_print_hash(fields)
 end
 
-def print_heading(genre, media_type, character_width=60)
-  # => ##### Upcoming Drama Series #####
+def print_heading(genre, media_type, character_width=50)
+  #  ==>  ##### Upcoming Drama Series #####
   title   = "Upcoming #{genre.split.map(&:capitalize).join(" ")} #{media_type.capitalize}"
   title   = title.split.uniq.join(" ")
 
@@ -114,6 +114,7 @@ def print_heading(genre, media_type, character_width=60)
   puts (heading.length % 2 == 0 ? "#{heading}#" : heading )
   puts
 end
+
 
 target_date = DateTime.parse(ARGV.first) rescue DateTime.now
 
@@ -127,7 +128,9 @@ flatten_hash(XPath::ORIGINAL_SERIES).each_pair do |genre, xpath|
   print_heading(genre, "series")
   new_shows = get_new_show_details(table)
 
-  print_row(sanatize_data(new_shows))
+  new_shows.each do |show|
+    print_row(sanatize_data(show))
+  end
 end
 
 
@@ -136,7 +139,9 @@ flatten_hash(XPath::ORIGINAL_FILMS).each_pair do |genre, xpath|
 
   print_heading(genre, "movies")
   new_movies = get_new_show_details(table)
-  
-  print_row(sanatize_data(new_movies))
+
+  new_movies.each do |movie|
+    print_row(sanatize_data(movie))
+  end
 end
 
