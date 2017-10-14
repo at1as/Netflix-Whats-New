@@ -14,38 +14,63 @@ Run the following command in your shell of choice
 ### Output
 
 ```
+...
 
-####################################### Upcoming Drama Series #######################################
+####################### Upcoming Foreign Language Series ########################
+
+
+November 10, 2017 :
+
+  - Blazing Transfer Students
+    Languag : Japanese
+    Genre   : Action comedy
+    Seasons : TBA
+    Length  : TBA
+    Status  : N/A
+
+December 1, 2017 :
+
+  - Dark
+    Languag : German
+    Genre   : Supernatural family drama
+    Seasons : TBA
+    Length  : TBA
+    Status  : N/A
+
+######################## Upcoming Co-productions Series #########################
+
 
 October 13, 2017 :
 
-  - Mindhunter
-    Genre: Drama
-    Seasons: TBA
-    Length: TBA
-    Status: Renewed
+  - Re:Mind(リマインド)
+    Partner : TV Tokyo/Japan
+    Genre   : Drama
+    Seasons : TBA
+    Length  : TBA
+    Status  : N/A
+    Languag : Japanese
+    Netflix : Worldwide
 
-###################################### Upcoming Comedy Series ######################################
+October 26, 2017 :
 
-November 23, 2017 :
+  - Ainori Love Wagon: Asian Journey
+    Partner : Fuji Television/Japan
+    Genre   : Reality television
+    Seasons : TBA
+    Length  : TBA
+    Status  : N/A
+    Languag : Japanese
+    Netflix : All other markets
 
-  - She's Gotta Have It
-    Genre: Comedy-drama
-    Seasons: 1 season, 10 episodes
-    Length: TBA
-    Status: N/A
-
-#################################### Upcoming Miniseries Series ####################################
-
-November 22, 2017 :
-
-  - Godless
-    Genre: Western
-    Episodes: 7 episodes
-    Length: TBA
+...
 
 ```
 
 ### Notes
 
 * Developed on MacOS 10.11 with Ruby 2.4.0
+
+
+### TODO
+
+* Replace upcoming content with content after specified date
